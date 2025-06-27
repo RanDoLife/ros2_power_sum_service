@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>my_py_service</name>
+  <version>0.0.0</version>
+  <description>ROS2 Python service example</description>
+  <maintainer email="your.email@example.com">Your Name</maintainer>
+  <license>Apache License 2.0</license>
+
+  <!-- Python-пакет -->
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <!-- Для генерации srv -->
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+
+  <!-- Зависимости -->
+  <depend>rclpy</depend>
+
+  <!-- Это говорит, что пакет содержит интерфейсы (srv/msg) -->
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <export>
+    <build_type>ament_python</build_type>
+    <rosidl_interface_packages/>
+  </export>
+</package>
