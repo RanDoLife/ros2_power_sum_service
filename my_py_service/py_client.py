@@ -1,6 +1,3 @@
-import sys
-sys.path.append('/home/randolife/ros2_ws/install/my_py_service/lib/python3.8/site-packages')  # или актуальный путь
-
 import rclpy
 from rclpy.node import Node
 from my_py_service.srv import PowerSum
@@ -8,42 +5,40 @@ from my_py_service.srv import PowerSum
 class PowerSumClient(Node):
     def __init__(self):
         super().__init__('power_sum_client')
-        self.client = self.create_client(PowerSum, 'power_sum')
-        while not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Сервис не доступен, пытаемся подключиться...')
-        self.req = PowerSum.Request()
+        self.declare_parameter('a', 0)
+        self.declare_parameter('b', 0)
 
-    def send_request(self, a, b):
-        self.req.a = a
-        self.req.b = b
-        self.future = self.client.call_async(self.req)
+        self.a = self.get_parameter('a').get_parameter_value().integer_value
+        self.b = self.get_parameter('b').get_parameter_value().integer_value
+
+        self.client = self.create_client(PowerSum, 'power_sum')
+
+        while not self.client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting for service...')
+
+        self.send_request()
+
+    def send_request(self):
+        request = PowerSum.Request()
+        request.a = self.a
+        request.b = self.b
+
+        future = self.client.call_async(request)
+        future.add_done_callback(self.response_callback)
+
+    def response_callback(self, future):
+        try:
+            response = future.result()
+            self.get_logger().info(f'Result: c = {response.c}')
+        except Exception as e:
+            self.get_logger().error(f'Service call failed: {e}')
+        finally:
+            rclpy.shutdown()
 
 def main(args=None):
     rclpy.init(args=args)
     node = PowerSumClient()
-
-    if len(sys.argv) != 3:
-        node.get_logger().error('Использование: ros2 run my_py_service py_client a b')
-        return
-
-    a = int(sys.argv[1])
-    b = int(sys.argv[2])
-
-    node.send_request(a, b)
-
-    while rclpy.ok():
-        rclpy.spin_once(node)
-        if node.future.done():
-            try:
-                response = node.future.result()
-            except Exception as e:
-                node.get_logger().error(f'Ошибка вызова сервиса: {e}')
-            else:
-                node.get_logger().info(f'Ответ сервиса: {response.c}')
-            break
-
-    node.destroy_node()
-    rclpy.shutdown()
+    rclpy.spin(node)
 
 if __name__ == '__main__':
     main()
